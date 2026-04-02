@@ -1,0 +1,29 @@
+{
+  "name": "dep-why",
+  "version": "0.1.0",
+  "description": "Explain why a package exists in your node_modules by showing dependency chains.",
+  "type": "module",
+  "bin": {
+    "dep-why": "dist/index.js"
+  },
+  "files": [
+    "dist/",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "tsc",
+    "test": "node --import tsx/esm --test test/**/*.test.ts"
+  },
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "commander": "^14.0.0",
+    "js-yaml": "^4.1.0"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^25.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^6.0.0"
+  }
+}
