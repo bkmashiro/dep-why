@@ -5,6 +5,7 @@ import type { DependencyGraph, NodeKind } from "./graph.js";
 export interface FormatOptions {
   json?: boolean;
   showAll?: boolean;
+  usage?: string[];
 }
 
 export function formatPaths(
@@ -20,7 +21,8 @@ export function formatPaths(
         package: targetPackage,
         version,
         paths,
-        count: paths.length
+        count: paths.length,
+        usage: options.usage ?? []
       },
       null,
       2
@@ -33,7 +35,14 @@ export function formatPaths(
 
   const heading = `${chalk.red(version ? `${targetPackage}@${version}` : targetPackage)} is required by:`;
   const displayPaths = options.showAll ? paths : paths.slice(0, 5);
-  const lines = displayPaths.map((path) => `  ${colorizePath(graph, path).join(chalk.dim(" -> "))}`);
+  const lines: string[] = [];
+
+  if (options.usage?.length) {
+    lines.push(...options.usage);
+    lines.push("");
+  }
+
+  lines.push(...displayPaths.map((path) => `  ${colorizePath(graph, path).join(chalk.dim(" -> "))}`));
   const hiddenCount = paths.length - displayPaths.length;
   const footer = `${paths.length} dependency path(s) found.`;
 
