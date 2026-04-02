@@ -1,6 +1,6 @@
 {
   "name": "dep-why",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Explain why a package exists in your node_modules by showing dependency chains.",
   "type": "module",
   "bin": {
