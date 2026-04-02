@@ -6,6 +6,7 @@ import process from "node:process";
 
 import { Command } from "commander";
 
+import { findDuplicatePackages, formatDuplicateReport } from "./duplicates.js";
 import { formatPaths } from "./formatter.js";
 import { findDependencyPaths, getTargetVersion, loadGraph } from "./graph.js";
 import {
@@ -13,6 +14,7 @@ import {
   promptForPackageSelection,
   summarizePackageUsage
 } from "./interactive.js";
+import { checkSecurity, formatSecurityReport } from "./security.js";
 import { analyzeSourceImports, findUnusedDependencies } from "./unused.js";
 
 const program = new Command();
@@ -26,12 +28,30 @@ program
   .option("--max-depth <n>", "Max path depth to show", parseInteger, 10)
   .option("--all", "Show all paths", false)
   .option("--unused", "Show dependencies declared in package.json but unused in src/", false)
+  .option("--duplicates", "Find packages installed at multiple versions", false)
+  .option("--security", "Check installed packages against npm audit", false)
   .option("--why <package>", "Explain why a package is needed")
   .option("--interactive", "Prompt for a package name interactively", false)
   .action(async (targetPackage: string | undefined, options) => {
     try {
+      ensureSingleMode(options);
+
       if (options.unused) {
         const output = await runUnusedMode(options.cwd);
+        process.stdout.write(`${output}\n`);
+        process.exitCode = 0;
+        return;
+      }
+
+      if (options.duplicates) {
+        const output = await runDuplicatesMode(options.cwd);
+        process.stdout.write(`${output}\n`);
+        process.exitCode = 0;
+        return;
+      }
+
+      if (options.security) {
+        const output = await runSecurityMode(options.cwd);
         process.stdout.write(`${output}\n`);
         process.exitCode = 0;
         return;
@@ -118,6 +138,18 @@ async function runUnusedMode(cwd: string): Promise<string> {
   return lines.join("\n");
 }
 
+async function runDuplicatesMode(cwd: string): Promise<string> {
+  const duplicates = await findDuplicatePackages(cwd);
+  return formatDuplicateReport(duplicates);
+}
+
+async function runSecurityMode(cwd: string): Promise<string> {
+  const graph = await loadGraph(cwd);
+  const issues = await checkSecurity(cwd);
+  const packageCount = graph.nodes.size - 1;
+  return formatSecurityReport(issues, packageCount);
+}
+
 async function formatSourceUsage(cwd: string, packageName: string): Promise<string[] | undefined> {
   const analysis = await analyzeSourceImports(cwd);
   const occurrences = analysis.packages.get(packageName);
@@ -163,4 +195,15 @@ function parseInteger(value: string): number {
   }
 
   return parsed;
+}
+
+function ensureSingleMode(options: {
+  unused?: boolean;
+  duplicates?: boolean;
+  security?: boolean;
+}): void {
+  const enabledModes = [options.unused, options.duplicates, options.security].filter(Boolean).length;
+  if (enabledModes > 1) {
+    throw new Error("Pass only one of --unused, --duplicates, or --security at a time.");
+  }
 }

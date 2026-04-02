@@ -171,6 +171,18 @@ export function findDependencyPaths(
   targetPackage: string,
   maxDepth = 10
 ): string[][] {
+  return findDependencyNodePaths(
+    graph,
+    (node) => node.name === targetPackage,
+    maxDepth
+  ).map((path) => path.map((id) => formatPathNode(graph, id)));
+}
+
+export function findDependencyNodePaths(
+  graph: DependencyGraph,
+  matcher: (node: GraphNode) => boolean,
+  maxDepth = 10
+): string[][] {
   const queue: Array<{ id: string; path: string[] }> = [{ id: graph.rootId, path: [graph.rootId] }];
   const found = new Set<string>();
   const results: string[][] = [];
@@ -197,12 +209,11 @@ export function findDependencyPaths(
         continue;
       }
 
-      if (node.name === targetPackage) {
-        const names = nextPath.map((id) => formatPathNode(graph, id));
-        const key = names.join("\u0000");
+      if (matcher(node)) {
+        const key = nextPath.join("\u0000");
         if (!found.has(key)) {
           found.add(key);
-          results.push(names);
+          results.push(nextPath);
         }
         continue;
       }
