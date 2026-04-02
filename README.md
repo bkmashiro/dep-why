@@ -1,3 +1,5 @@
+[![npm](https://img.shields.io/npm/v/dep-why)](https://www.npmjs.com/package/dep-why) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 # dep-why
 
 A CLI that explains why a package is present in your `node_modules` by tracing the full dependency chain from your project root.

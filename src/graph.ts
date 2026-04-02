@@ -259,8 +259,8 @@ function addRootEdges(
 
   for (const [name, spec] of Object.entries(dependencies)) {
     const version = normalizeVersionSpec(spec);
-    const id = packageNodeId(name, version);
-    upsertNode(graph, { id, name, version, kind });
+    const id = resolveNodeId(graph, name, version);
+    upsertNode(graph, { id, name, version: graph.nodes.get(id)?.version ?? version, kind });
     addEdge(graph, ROOT_ID, id);
   }
 }
@@ -277,8 +277,8 @@ function addPackageEdges(
 
   for (const [name, spec] of Object.entries(dependencies)) {
     const version = normalizeVersionSpec(spec);
-    const id = packageNodeId(name, version);
-    upsertNode(graph, { id, name, version, kind });
+    const id = resolveNodeId(graph, name, version);
+    upsertNode(graph, { id, name, version: graph.nodes.get(id)?.version ?? version, kind });
     addEdge(graph, fromId, id);
   }
 }
@@ -356,6 +356,22 @@ function upsertNode(graph: DependencyGraph, node: GraphNode): void {
 
 function packageNodeId(name: string, version?: string): string {
   return version ? `${name}@${version}` : name;
+}
+
+function resolveNodeId(graph: DependencyGraph, name: string, version?: string): string {
+  if (version) {
+    const exactId = packageNodeId(name, version);
+    if (graph.nodes.has(exactId)) {
+      return exactId;
+    }
+  }
+
+  const matches = [...graph.nodes.values()].filter((node) => node.name === name);
+  if (matches.length === 1) {
+    return matches[0].id;
+  }
+
+  return packageNodeId(name, version);
 }
 
 function normalizeVersionSpec(value: string | { version?: string }): string | undefined {
